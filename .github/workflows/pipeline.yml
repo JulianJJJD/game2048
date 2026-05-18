@@ -1,0 +1,43 @@
+name: Build Test Package Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build and test
+        run: mvn clean package
+
+      - name: Upload WAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: game2048-war
+          path: target/game2048.war
+
+  deploy:
+    needs: build-test-package
+    runs-on: self-hosted
+
+    steps:
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: game2048-war
+
+      - name: Deploy WAR to Tomcat
+        run: |
+          rm -rf /usr/local/tomcat/webapps/game2048
+          rm -f /usr/local/tomcat/webapps/game2048.war
+          cp game2048.war /usr/local/tomcat/webapps/game2048.war
